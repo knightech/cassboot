@@ -1,0 +1,88 @@
+Spring
+---
+
+= Run Cassandra
+---
+
+[source]
+----
+docker-compose up -d
+----
+
+
+Log into Cassandra
+
+[source]
+----
+cqlsh --username=cassandra --password=cassandra
+----
+
+And run these cql statements
+
+[source]
+----
+
+CREATE KEYSPACE IF NOT EXISTS sample WITH replication = {'class':'SimpleStrategy', 'replication_factor':1};
+
+use sample;
+
+CREATE TABLE IF NOT EXISTS  sample.hotels (
+    id UUID,
+    name varchar,
+    address varchar,
+    state varchar,
+    zip varchar,
+    primary key((id), name)
+);
+
+CREATE TABLE IF NOT EXISTS  sample.hotels_by_letter (
+    first_letter varchar,
+    hotel_name varchar,
+    hotel_id UUID,
+    address varchar,
+    state varchar,
+    zip varchar,
+    primary key((first_letter), hotel_name, hotel_id)
+);
+
+
+CREATE MATERIALIZED VIEW sample.hotels_by_state AS
+    SELECT id, name, address, state, zip FROM hotels
+        WHERE state IS NOT NULL AND id IS NOT NULL AND name IS NOT NULL
+    PRIMARY KEY ((state), name, id)
+    WITH CLUSTERING ORDER BY (name DESC)
+----
+
+= Run the App
+
+[source]
+----
+./gradlew clean bootRun
+----
+
+= Populate Data
+
+brew install httpie
+
+[source]
+----
+http POST 'http://localhost:8080/hotels' state="WA" name="A Sample Hotel" zip="00001" address="Address 1"
+http POST 'http://localhost:8080/hotels' state="WA" name="B Sample Hotel" zip="00002" address="Address 2"
+http POST 'http://localhost:8080/hotels' state="OR" name="C Sample Hotel" zip="00003" address="Address 3"
+----
+
+= Query Data
+
+Get hotels with names starting with "A" - internally makes use of a table with duplicated content,
+maintained with first letter as the partition key
+
+[source]
+----
+http GET 'http://localhost:8080/hotels/startingwith/A'
+----
+
+Get Hotels from State - makes use of a materialized view
+[source]
+----
+http GET 'http://localhost:8080/hotels/fromstate/OR'
+----

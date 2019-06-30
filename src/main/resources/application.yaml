@@ -1,0 +1,7 @@
+spring:
+  data:
+    cassandra:
+      keyspace-name: sample
+      contact-points: localhost
+      username: cassandra
+      password: cassandra
