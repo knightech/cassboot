@@ -4,11 +4,6 @@ plugins {
 
 apply plugin: 'java'
 
-jar {
-	baseName = 'sample-boot-with-cassandra'
-	version = '0.0.1-SNAPSHOT'
-}
-
 repositories {
 	mavenCentral()
 }
